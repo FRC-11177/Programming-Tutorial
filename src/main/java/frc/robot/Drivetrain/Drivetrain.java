@@ -173,7 +173,7 @@ public class Drivetrain implements Subsystem{
             return run(
                 () -> {
                     double leftSpeed = targetSpeeds.leftMetersPerSecond / Constants.MaxVelocity.in(MetersPerSecond);
-                    double rightSpeed = targetSpeeds.leftMetersPerSecond / Constants.MaxVelocity.in(MetersPerSecond);
+                    double rightSpeed = targetSpeeds.rightMetersPerSecond / Constants.MaxVelocity.in(MetersPerSecond);
 
                     leftSimMotor.setAppliedOutput(leftSpeed);
                     rightSimMotor.setAppliedOutput(rightSpeed);
@@ -236,7 +236,7 @@ public class Drivetrain implements Subsystem{
             Constants.GearRatio,
             Constants.SimMOI,
             Constants.SimMass,
-            Constants.WheelRadius.in(Meters) / Math.PI / 2,
+            Constants.WheelRadius.in(Meters),
             Constants.kinematics.trackWidthMeters,
             null
         );
