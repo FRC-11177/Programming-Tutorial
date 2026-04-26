@@ -29,6 +29,7 @@ import com.studica.frc.AHRS.NavXComType;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.estimator.DifferentialDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.DifferentialDriveWheelPositions;
 import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
@@ -67,7 +68,7 @@ public class Drivetrain implements Subsystem{
     public SparkMaxSim leftSimMotor, rightSimMotor;
     
     public List<RelativeEncoder> encoders;
-    public SparkRelativeEncoderSim leftEncoderSim, rightEncoderSim;
+    public SparkRelativeEncoderSim leftSimEncoder, rightSimEncoder;
 
     public SparkClosedLoopController LeftPID, RightPID;
     public AHRS gyro; //using the NavX gyroscope, putting it on the RoboRIO MXP port
@@ -95,8 +96,6 @@ public class Drivetrain implements Subsystem{
         RightPID = motors.get(2).getClosedLoopController();
 
         gyro = new AHRS(NavXComType.kMXP_SPI);
-        PoseEstimator = new DifferentialDrivePoseEstimator(Constants.kinematics, gyro.getRotation2d(), getPosition().leftMeters, getPosition().rightMeters, new Pose2d());
-
 
         FrontLeftConfig = new SparkMaxConfig();
         FrontRightConfig = new SparkMaxConfig();
@@ -122,8 +121,8 @@ public class Drivetrain implements Subsystem{
             .smartCurrentLimit(40);
         FrontRightConfig.closedLoop.apply(RightWheels.PID).apply(RightWheels.FF).apply(RightWheels.Motion);
         FrontRightConfig.encoder
-            .positionConversionFactor(1/Constants.GearRatio)
-            .velocityConversionFactor(1/Constants.GearRatio/60);
+            .positionConversionFactor(Constants.PositionConversionFactor)
+            .velocityConversionFactor(Constants.VelocityConversionFactor);
         BackRightConfig
             .follow(RightWheels.FrontMotor);
 
@@ -132,53 +131,64 @@ public class Drivetrain implements Subsystem{
         motors.get(2).configure(FrontRightConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
         motors.get(3).configure(BackRightConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
         
-        autoInit();
-
         if(RobotBase.isSimulation()) simInit();
 
+        PoseEstimator = new DifferentialDrivePoseEstimator(Constants.kinematics, gyro.getRotation2d(), getPosition().leftMeters, getPosition().rightMeters, new Pose2d());
         publisherField = NetworkTableInstance.getDefault().getStructTopic("Field", Pose2d.struct).publish();
+
+        autoInit();
     }
 
     public DifferentialDriveWheelPositions getPosition(){
-        return new DifferentialDriveWheelPositions(
-            Meters.of(encoders.get(0).getPosition()*Constants.WheelRadius.times(2*Math.PI).in(Meters)),
-            Meters.of(encoders.get(2).getPosition()*Constants.WheelRadius.times(2*Math.PI).in(Meters))
-        );
-    }
-
-    public DifferentialDriveWheelSpeeds getSpeeds(){
-        return new DifferentialDriveWheelSpeeds(
-            MetersPerSecond.of(encoders.get(0).getVelocity()*Constants.WheelRadius.times(2*Math.PI).in(Meters)),
-            MetersPerSecond.of(encoders.get(2).getVelocity()*Constants.WheelRadius.times(2*Math.PI).in(Meters))
-        );
-    }
-
-    public Command drive(Supplier<LinearVelocity> vx, Supplier<LinearVelocity>vy, Supplier<AngularVelocity> omega){
-        return drive(new ChassisSpeeds(vx.get(), vy.get(), omega.get()));
-    }
-
-    public Command drive(ChassisSpeeds speeds){
-        DifferentialDriveWheelSpeeds targetSpeeds = Constants.kinematics.toWheelSpeeds(ChassisSpeeds.discretize(speeds, 0.01));
-
         if(RobotBase.isReal()) {
-            return run(
-                () -> {
-                    targetSpeeds.desaturate(Constants.MaxVelocity);
-                    LeftPID.setSetpoint(targetSpeeds.leftMetersPerSecond, ControlType.kMAXMotionVelocityControl);
-                    RightPID.setSetpoint(targetSpeeds.rightMetersPerSecond, ControlType.kMAXMotionVelocityControl);
-                }
+            return new DifferentialDriveWheelPositions(
+                Meters.of(encoders.get(0).getPosition() * Constants.WheelRadius.times(2 * Math.PI).in(Meters)),
+                Meters.of(encoders.get(2).getPosition() * Constants.WheelRadius.times(2 * Math.PI).in(Meters))
             );
         }
         else {
-            return run(
-                () -> {
-                    double leftSpeed = targetSpeeds.leftMetersPerSecond / Constants.MaxVelocity.in(MetersPerSecond);
-                    double rightSpeed = targetSpeeds.rightMetersPerSecond / Constants.MaxVelocity.in(MetersPerSecond);
-
-                    leftSimMotor.setAppliedOutput(leftSpeed);
-                    rightSimMotor.setAppliedOutput(rightSpeed);
-                }
+            return new DifferentialDriveWheelPositions(
+                Meters.of(leftSimEncoder.getPosition() * Constants.WheelRadius.times(2 * Math.PI).in(Meters)),
+                Meters.of(rightSimEncoder.getPosition() * Constants.WheelRadius.times(2 * Math.PI).in(Meters))
             );
+        }
+    }
+
+    public DifferentialDriveWheelSpeeds getSpeeds(){
+        if(RobotBase.isReal()) {
+            return new DifferentialDriveWheelSpeeds(
+                MetersPerSecond.of(encoders.get(0).getVelocity() * Constants.WheelRadius.times(2 * Math.PI).in(Meters)),
+                MetersPerSecond.of(encoders.get(2).getVelocity() * Constants.WheelRadius.times(2 * Math.PI).in(Meters))
+            );
+        }
+        else {
+            return new DifferentialDriveWheelSpeeds(
+                MetersPerSecond.of(leftSimEncoder.getVelocity() * Constants.WheelRadius.times(2 * Math.PI).in(Meters)),
+                MetersPerSecond.of(rightSimEncoder.getVelocity() * Constants.WheelRadius.times(2 * Math.PI).in(Meters))
+            );
+        }
+    }
+
+    public Command drive(Supplier<LinearVelocity> vx, Supplier<LinearVelocity>vy, Supplier<AngularVelocity> omega){
+        return run(() -> drive(new ChassisSpeeds(vx.get(), vy.get(), omega.get())));
+    }
+
+    private void drive(ChassisSpeeds speeds) {
+        ChassisSpeeds discretizedSpeeds = ChassisSpeeds.discretize(speeds, 0.01);
+        DifferentialDriveWheelSpeeds targetSpeeds = Constants.kinematics.toWheelSpeeds(discretizedSpeeds);
+
+        targetSpeeds.desaturate(Constants.MaxVelocity);
+
+        if(RobotBase.isReal()) {
+            LeftPID.setSetpoint(targetSpeeds.leftMetersPerSecond, ControlType.kMAXMotionVelocityControl);
+            RightPID.setSetpoint(targetSpeeds.rightMetersPerSecond, ControlType.kMAXMotionVelocityControl);
+        }
+        else {
+            double leftSpeed = targetSpeeds.leftMetersPerSecond / Constants.MaxVelocity.in(MetersPerSecond);
+            double rightSpeed = targetSpeeds.rightMetersPerSecond / Constants.MaxVelocity.in(MetersPerSecond);
+
+            leftSimMotor.setAppliedOutput(leftSpeed);
+            rightSimMotor.setAppliedOutput(rightSpeed);
         }
     }
 
@@ -197,13 +207,13 @@ public class Drivetrain implements Subsystem{
 
         driveSim.update(0.02);
 
-        leftEncoderSim.setPosition(driveSim.getLeftPositionMeters());
-        rightEncoderSim.setPosition(driveSim.getRightPositionMeters());
+        leftSimEncoder.setPosition(driveSim.getLeftPositionMeters());
+        rightSimEncoder.setPosition(driveSim.getRightPositionMeters());
 
-        leftEncoderSim.setVelocity(driveSim.getLeftVelocityMetersPerSecond());
-        rightEncoderSim.setVelocity(driveSim.getRightVelocityMetersPerSecond());
+        leftSimEncoder.setVelocity(driveSim.getLeftVelocityMetersPerSecond());
+        rightSimEncoder.setVelocity(driveSim.getRightVelocityMetersPerSecond());
 
-        gyro.setAngleAdjustment(driveSim.getHeading().getDegrees());
+        gyro.setAngleAdjustment(-driveSim.getHeading().getDegrees());
     }
 
     public void resetPose(Pose2d pose){
@@ -244,8 +254,8 @@ public class Drivetrain implements Subsystem{
         leftSimMotor = new SparkMaxSim(motors.get(0), DCMotor.getNEO(2));
         rightSimMotor = new SparkMaxSim(motors.get(2), DCMotor.getNEO(2));
 
-        leftEncoderSim = leftSimMotor.getRelativeEncoderSim();
-        rightEncoderSim = rightSimMotor.getRelativeEncoderSim();
+        leftSimEncoder = leftSimMotor.getRelativeEncoderSim();
+        rightSimEncoder = rightSimMotor.getRelativeEncoderSim();
 
         leftSimMotor.useDriverStationEnable();
         rightSimMotor.useDriverStationEnable();

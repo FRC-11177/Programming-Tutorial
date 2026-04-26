@@ -4,6 +4,9 @@
 
 package frc.robot;
 
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.path.PathPlannerPath;
+
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -11,21 +14,27 @@ import frc.robot.Drivetrain.Drivetrain;
 import frc.robot.Drivetrain.Constants;
 
 public class RobotContainer {
-  public Drivetrain drivetrain = Drivetrain.getInstance();
-  public CommandXboxController controller = new CommandXboxController(0);
+	public Drivetrain drivetrain = Drivetrain.getInstance();
+	public CommandXboxController controller = new CommandXboxController(0);
 
-  public RobotContainer() {
-    drivetrain.setDefaultCommand(drivetrain.drive(
-      () -> Constants.MaxVelocity.times(controller.getLeftX()),
-      () -> Constants.MaxVelocity.times(controller.getLeftY()),
-      () -> Constants.MaxOmega.times(controller.getRightX())
-    ));
-    configureBindings();
-  }
+	public RobotContainer() {
+		drivetrain.setDefaultCommand(drivetrain.drive(
+		() -> Constants.MaxVelocity.times(controller.getLeftX()),
+		() -> Constants.MaxVelocity.times(controller.getLeftY()),
+		() -> Constants.MaxOmega.times(controller.getRightX())
+		));
+		configureBindings();
+	}
 
-  private void configureBindings() {}
+	private void configureBindings() {}
 
-  public Command getAutonomousCommand() {
-    return Commands.print("No autonomous command configured");
-  }
+	public Command getAutonomousCommand() {
+		try {
+			PathPlannerPath path = PathPlannerPath.fromPathFile("Example path");
+			return AutoBuilder.followPath(path);
+		}
+		catch(Exception e) {
+			return Commands.print("No autonomous command configured");
+		}
+	}
 }
