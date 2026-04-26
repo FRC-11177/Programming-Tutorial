@@ -2,13 +2,8 @@ package frc.robot.Drivetrain;
 
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
-import static edu.wpi.first.units.Units.RadiansPerSecond;
-
 import java.util.List;
 import java.util.function.Supplier;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
-
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPLTVController;
@@ -34,8 +29,6 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.DifferentialDriveWheelPositions;
 import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
 import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -78,8 +71,6 @@ public class Drivetrain implements Subsystem{
     private SparkMaxConfig FrontLeftConfig, FrontRightConfig, BackLeftConfig, BackRightConfig;
 
     private DifferentialDrivetrainSim driveSim;
-
-    private final StructPublisher<Pose2d> publisherField;
 
     private Drivetrain(){
         //initialize the variables we just defined
@@ -192,10 +183,14 @@ public class Drivetrain implements Subsystem{
         }
     }
 
+    public void resetPose(Pose2d pose){
+            PoseEstimator.resetPose(pose);
+        }
+
+
     @Override
     public void periodic(){
         PoseEstimator.update(gyro.getRotation2d(), getPosition());
-        publisherField.set(PoseEstimator.getEstimatedPosition());
     }
 
     @Override
@@ -214,10 +209,6 @@ public class Drivetrain implements Subsystem{
         rightSimEncoder.setVelocity(driveSim.getRightVelocityMetersPerSecond());
 
         gyro.setAngleAdjustment(-driveSim.getHeading().getDegrees());
-    }
-
-    public void resetPose(Pose2d pose){
-        PoseEstimator.resetPose(pose);
     }
 
     private void autoInit(){
