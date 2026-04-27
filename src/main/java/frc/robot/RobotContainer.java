@@ -5,8 +5,9 @@
 package frc.robot;
 
 import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.path.PathPlannerPath;
 
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -18,14 +19,22 @@ public class RobotContainer {
   public Drivetrain drivetrain = Drivetrain.getInstance();
   public CommandXboxController controller = new CommandXboxController(0);
   
+  private SendableChooser<Command> autoChooser;
 
   public RobotContainer() {
     new DataLog();
-    drivetrain.setDefaultCommand(drivetrain.drive(
-      () -> Constants.MaxVelocity.times(controller.getLeftX()),
-      () -> Constants.MaxVelocity.times(controller.getLeftY()),
-      () -> Constants.MaxOmega.times(controller.getRightX())
-    ));
+
+	autoChooser = AutoBuilder.buildAutoChooser();
+	SmartDashboard.putData("Auto Chooser", autoChooser);
+
+    drivetrain.setDefaultCommand(
+      drivetrain.drive(
+        () -> Constants.MaxVelocity.times(controller.getLeftX()),
+        () -> Constants.MaxVelocity.times(controller.getLeftY()),
+        () -> Constants.MaxOmega.times(controller.getRightX())
+      )
+    );
+
     configureBindings();
   }
 
@@ -33,8 +42,7 @@ public class RobotContainer {
 
 	public Command getAutonomousCommand() {
 		try {
-			PathPlannerPath path = PathPlannerPath.fromPathFile("Example path");
-			return AutoBuilder.followPath(path);
+      return autoChooser.getSelected();
 		}
 		catch(Exception e) {
 			return Commands.print("No autonomous command configured");

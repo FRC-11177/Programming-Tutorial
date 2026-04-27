@@ -48,7 +48,7 @@ import frc.robot.Drivetrain.Constants.RightWheels;
  */
 
 
-public class Drivetrain implements Subsystem{
+public class Drivetrain implements Subsystem {
 
     /**
      * defines the motors and other essential parts
@@ -158,6 +158,10 @@ public class Drivetrain implements Subsystem{
                 MetersPerSecond.of(rightSimEncoder.getVelocity() * Constants.WheelRadius.times(2 * Math.PI).in(Meters))
             );
         }
+    }
+
+    public Pose2d getCurrentPose() {
+        return PoseEstimator.getEstimatedPosition();
     }
 
     public Command drive(Supplier<LinearVelocity> vx, Supplier<LinearVelocity>vy, Supplier<AngularVelocity> omega){
