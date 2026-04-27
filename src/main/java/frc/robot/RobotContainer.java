@@ -12,19 +12,22 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Drivetrain.Drivetrain;
 import frc.robot.Drivetrain.Constants;
+import frc.robot.Drivetrain.DataLog;
 
 public class RobotContainer {
-	public Drivetrain drivetrain = Drivetrain.getInstance();
-	public CommandXboxController controller = new CommandXboxController(0);
+  public Drivetrain drivetrain = Drivetrain.getInstance();
+  public CommandXboxController controller = new CommandXboxController(0);
+  
 
-	public RobotContainer() {
-		drivetrain.setDefaultCommand(drivetrain.drive(
-		() -> Constants.MaxVelocity.times(controller.getLeftX()),
-		() -> Constants.MaxVelocity.times(controller.getLeftY()),
-		() -> Constants.MaxOmega.times(controller.getRightX())
-		));
-		configureBindings();
-	}
+  public RobotContainer() {
+    new DataLog();
+    drivetrain.setDefaultCommand(drivetrain.drive(
+      () -> Constants.MaxVelocity.times(controller.getLeftX()),
+      () -> Constants.MaxVelocity.times(controller.getLeftY()),
+      () -> Constants.MaxOmega.times(controller.getRightX())
+    ));
+    configureBindings();
+  }
 
 	private void configureBindings() {}
 
