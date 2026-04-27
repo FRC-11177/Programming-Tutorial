@@ -14,7 +14,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 public class DataLog extends SubsystemBase {
     private Drivetrain drivetrain = Drivetrain.getInstance();
 
-    private StructPublisher<Pose2d> CurrentPose = NetworkTableInstance.getDefault().getStructTopic("Drivetrain/CurrentPose", Pose2d.struct).publish(); // NetworkTableInstance.getDefault().getStructTopic("Drivetrain/CurrentPose", Pose2d.struct).publish();
+    private StructPublisher<Pose2d> CurrentPose = NetworkTableInstance.getDefault().getStructTopic("Drivetrain/CurrentPose", Pose2d.struct).publish();
     private StructPublisher<ChassisSpeeds> CurrentSpeeds = NetworkTableInstance.getDefault().getStructTopic("Drivetrain/CurrentSpeeds", ChassisSpeeds.struct).publish();
     private StructPublisher<DifferentialDriveWheelSpeeds> CurrentWheelSpeeds = NetworkTableInstance.getDefault().getStructTopic("Drivetrain/CurrentWheelSpeeds", DifferentialDriveWheelSpeeds.struct).publish();
     private StructPublisher<DifferentialDriveWheelPositions> CurrentPosition = NetworkTableInstance.getDefault().getStructTopic("Drivetrain/CurrentPosition", DifferentialDriveWheelPositions.struct).publish();
