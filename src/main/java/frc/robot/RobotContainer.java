@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import dev.doglog.DogLog;
+import dev.doglog.DogLogOptions;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -22,6 +24,15 @@ public class RobotContainer {
       Constants.MaxOmega.times(controller.getRightX())
     )));
     
+    DogLog.setOptions(new DogLogOptions()
+      .withLogExtras(true)
+      .withNtPublish(true)
+      .withCaptureNt(true)
+      .withCaptureDs(true)
+      .withCaptureConsole(true));
+
+    DogLog.setEnabled(true);
+
     configureBindings();
   }
 
